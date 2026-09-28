@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.offx366/ibangen-mcp",
+  "description": "Validate IBANs, generate synthetic test IBANs and look up banks (SWIFT/BIC) via IBANgen.",
+  "repository": {"url": "https://github.com/offx366/ibangen-mcp", "source": "github"},
+  "websiteUrl": "https://ibangen.com",
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "ibangen-mcp",
+      "version": "0.1.1",
+      "transport": {"type": "stdio"},
+      "environmentVariables": [
+        {"name": "IBANGEN_API_KEY", "description": "IBANgen API key; optional for validation, required for generation and bank lookup", "isRequired": false, "isSecret": true}
+      ]
+    }
+  ]
+}

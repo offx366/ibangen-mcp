@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ibangen-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for IBANgen: validate IBANs, generate synthetic test IBANs and look up banks."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,6 +22,8 @@ dependencies = ["mcp>=1.2,<3"]
 [project.urls]
 Homepage = "https://ibangen.com"
 Documentation = "https://ibangen.com/apidoc"
+Repository = "https://github.com/offx366/ibangen-mcp"
+Issues = "https://github.com/offx366/ibangen-mcp/issues"
 
 [project.scripts]
 ibangen-mcp = "ibangen_mcp.server:main"

@@ -1,5 +1,9 @@
 # ibangen-mcp
 
+<!-- mcp-name: io.github.offx366/ibangen-mcp -->
+
+Official MCP server for [IBANgen](https://ibangen.com), the IBAN generator and validator for payment testing.
+
 MCP server that gives AI agents three IBANgen tools:
 
 | Tool | Key needed | What it does |
