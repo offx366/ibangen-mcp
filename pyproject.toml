@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ibangen-mcp"
+version = "0.1.0"
+description = "MCP server for IBANgen: validate IBANs, generate synthetic test IBANs and look up banks."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["mcp", "iban", "iban-validation", "test-data", "sepa", "bic", "swift", "fintech", "qa"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Office/Business :: Financial",
+]
+dependencies = ["mcp>=1.2,<3"]
+
+[project.urls]
+Homepage = "https://ibangen.com"
+Documentation = "https://ibangen.com/apidoc"
+
+[project.scripts]
+ibangen-mcp = "ibangen_mcp.server:main"
