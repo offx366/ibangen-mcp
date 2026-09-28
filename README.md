@@ -35,4 +35,6 @@ pip install ibangen-mcp
 
 Cursor uses the same block in `.cursor/mcp.json`. Get a key at https://ibangen.com/apidoc#auth.
 
+The same API is also sold on [RapidAPI](https://rapidapi.com/offx366/api/iban-us-bank-account-test-data-api) (IBAN plus US bank account and routing test data).
+
 `IBANGEN_API_BASE_URL` overrides the default `https://ibangen.com/api/v1`.
