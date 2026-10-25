@@ -1,19 +1,22 @@
 """Dependency-free calls to the public IBANgen REST API.
 
 Kept separate from the MCP wiring so it can be tested without the ``mcp``
-package. Validation works without a key (small per-IP daily allowance);
-generation and bank lookups need ``IBANGEN_API_KEY``.
+package. Validation and country-level generation work without a key (small
+per-IP daily allowances); bank targeting, bank lookups and US tools need
+``IBANGEN_API_KEY`` (a free key includes 100 API calls a month).
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.error
 import urllib.request
 
 DEFAULT_BASE_URL = "https://ibangen.com/api/v1"
-USER_AGENT = "ibangen-mcp/0.1"
-SIGNUP_HINT = "Create a free API key at https://ibangen.com/apidoc#auth and set IBANGEN_API_KEY."
+USER_AGENT = "ibangen-mcp/0.1.2"
+SIGNUP_HINT = ("Create a free API key (100 calls a month) at https://ibangen.com/account?focus=api "
+               "and set IBANGEN_API_KEY.")
 
 
 class IBANgenAPIError(RuntimeError):
@@ -31,7 +34,7 @@ def _config():
     )
 
 
-def _post(path: str, payload: dict, *, require_key: bool, opener=urllib.request.urlopen):
+def _request(path: str, payload: dict | None, *, require_key: bool, method="POST", opener=urllib.request.urlopen):
     base_url, api_key = _config()
     if require_key and not api_key:
         raise IBANgenAPIError(401, {"error": f"This tool needs an API key. {SIGNUP_HINT}"})
@@ -39,7 +42,8 @@ def _post(path: str, payload: dict, *, require_key: bool, opener=urllib.request.
     if api_key:
         headers["X-API-Key"] = api_key
     request = urllib.request.Request(
-        base_url + path, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST",
+        base_url + path, data=json.dumps(payload).encode("utf-8") if payload is not None else None,
+        headers=headers, method=method,
     )
     try:
         with opener(request, timeout=30) as response:
@@ -52,6 +56,15 @@ def _post(path: str, payload: dict, *, require_key: bool, opener=urllib.request.
         if exc.code in (401, 429) and not api_key:
             body.setdefault("hint", SIGNUP_HINT)
         raise IBANgenAPIError(exc.code, body if isinstance(body, dict) else {"error": str(body)}) from exc
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        # No automatic retry: a metered operation may already have completed.
+        raise IBANgenAPIError(503, {"error": "transport_failure; do not automatically retry a metered call"}) from exc
+    except (ValueError, UnicodeError) as exc:
+        raise IBANgenAPIError(502, {"error": "invalid_api_response; do not automatically retry a metered call"}) from exc
+
+
+def _post(path: str, payload: dict, *, require_key: bool, opener=urllib.request.urlopen):
+    return _request(path, payload, require_key=require_key, opener=opener)
 
 
 def validate_ibans(ibans: list[str], *, opener=urllib.request.urlopen):
@@ -73,7 +86,8 @@ def generate_test_ibans(country: str, quantity: int = 1, *, bank: str | None = N
         payload["seed"] = str(seed)[:100]
     if bank:
         payload["targeting"] = {"bank": str(bank)[:120]}
-    return _post("/generate", payload, require_key=True, opener=opener)
+    # Country-level IBANs work without a key (up to 10 a day per IP); bank targeting needs a paid key.
+    return _post("/generate", payload, require_key=bool(bank), opener=opener)
 
 
 def lookup_bank(value: str, identifier_type: str = "bic", *, opener=urllib.request.urlopen):
@@ -86,3 +100,35 @@ def lookup_bank(value: str, identifier_type: str = "bic", *, opener=urllib.reque
         require_key=True,
         opener=opener,
     )
+
+
+def generate_us_test_accounts(quantity: int = 1, seed: str | None = None, *, opener=urllib.request.urlopen):
+    if type(quantity) is not int or not 1 <= quantity <= 10:
+        raise ValueError("quantity must be an integer between 1 and 10")
+    payload = {"mode": "synthetic", "quantity": quantity}
+    if seed is not None:
+        if not isinstance(seed, str) or len(seed) > 100:
+            raise ValueError("seed must be a string of at most 100 characters")
+        payload["seed"] = seed
+    return _post("/us/routing/generate", payload, require_key=True, opener=opener)
+
+
+def validate_us_routing_numbers(routing_numbers: list[str], *, confirm_api_credits: bool = False,
+                                opener=urllib.request.urlopen):
+    if not isinstance(routing_numbers, list) or not 1 <= len(routing_numbers) <= 10:
+        raise ValueError("Provide between 1 and 10 routing numbers")
+    if any(not isinstance(value, str) or not value.strip() or len(value) > 30 for value in routing_numbers):
+        raise ValueError("Routing numbers must be nonempty strings of at most 30 characters")
+    if confirm_api_credits is not True:
+        raise ValueError("Explicitly confirm spending up to one API credit per distinct routing number")
+    return _post("/us/routing/check-list", {"routing_numbers": [value.strip() for value in routing_numbers],
+                                           "generate_tests": False}, require_key=True, opener=opener)
+
+
+def lookup_us_routing_number(routing_number: str, *, confirm_api_credit: bool = False,
+                              opener=urllib.request.urlopen):
+    if not isinstance(routing_number, str) or not re.fullmatch(r"[0-9]{9}", routing_number):
+        raise ValueError("Provide a routing number as a 9-digit string, preserving leading zeros")
+    if confirm_api_credit is not True:
+        raise ValueError("Explicitly confirm spending one API credit for this lookup")
+    return _request("/us/routing/" + routing_number, None, method="GET", require_key=True, opener=opener)

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ibangen-mcp"
-version = "0.1.1"
-description = "MCP server for IBANgen: validate IBANs, generate synthetic test IBANs and look up banks."
+version = "0.1.2"
+description = "MCP server for IBANgen: validate IBANs, generate synthetic test IBANs and US bank account test data, and look up banks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

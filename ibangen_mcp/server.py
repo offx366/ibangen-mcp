@@ -36,8 +36,9 @@ def generate_test_ibans(country: str, quantity: int = 1, bank: str | None = None
     """Generate synthetic, checksum-valid test IBANs for QA and development.
 
     `country` is a country name such as "Germany" or "UK". `seed` makes the output
-    repeatable. `bank` targets one bank (paid plans). Requires IBANGEN_API_KEY.
-    Output is test data only and must never be used for payments.
+    repeatable. Without IBANGEN_API_KEY up to 10 country-level IBANs a day per IP
+    (bank fields hidden); a free key gives 100 API calls a month. `bank` targets one
+    bank and needs a paid key. Output is test data only and must never be used for payments.
     """
     return _call(api.generate_test_ibans, country, quantity, bank=bank, seed=seed)
 
@@ -49,6 +50,40 @@ def lookup_bank(value: str, identifier_type: str = "bic") -> dict:
     Requires IBANGEN_API_KEY on a plan that includes bank intelligence.
     """
     return _call(api.lookup_bank, value, identifier_type)
+
+
+@mcp.tool()
+def generate_us_test_accounts(quantity: int = 1, seed: str | None = None) -> dict:
+    """Generate 1–10 free US routing/account test rows using an API key.
+
+    Accounts are synthetic; routing references do not establish live payment
+    eligibility. No bank reveal, paid targeting or profile generation is requested.
+    A seed makes results reproducible. Never use these values for payments.
+    """
+    return _call(api.generate_us_test_accounts, quantity, seed)
+
+
+@mcp.tool()
+def validate_us_routing_numbers(routing_numbers: list[str], confirm_api_credits: bool = False) -> dict:
+    """Check 1–10 US routing numbers against the existing metered registry API.
+
+    Requires a qualifying API key/plan. Ask the user to approve spending up to one
+    API credit per distinct number before setting confirm_api_credits=True.
+    Returns source observations, not account existence or proof of ACH eligibility.
+    This is not the free web preview. Do not automatically retry a failed call.
+    """
+    return _call(api.validate_us_routing_numbers, routing_numbers, confirm_api_credits=confirm_api_credits)
+
+
+@mcp.tool()
+def lookup_us_routing_number(routing_number: str, confirm_api_credit: bool = False) -> dict:
+    """Look up a 9-digit US routing number with the existing API entitlement gates.
+
+    Ask the user to approve one API credit before confirm_api_credit=True. Preserve
+    leading zeros. Registry evidence does not prove account existence or current
+    ACH/Fedwire eligibility. Do not automatically retry a failed metered call.
+    """
+    return _call(api.lookup_us_routing_number, routing_number, confirm_api_credit=confirm_api_credit)
 
 
 def main():
