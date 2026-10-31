@@ -24,7 +24,18 @@ Fedwire or account eligibility. The metered US tools do not replace the free web
 preview and do not bypass bank metadata gates. They never automatically retry a
 transport failure, because a credit may already have been consumed.
 
-## Install
+## Remote server (nothing to install)
+
+Add `https://ibangen.com/api/mcp` as a custom connector in ChatGPT, Claude, Cursor or VS Code
+(Streamable HTTP, no key needed to start; send `Authorization: Bearer <API key>` for paid-plan limits).
+It offers `validate_ibans`, `generate_test_ibans`, `bank_test_ibans` (free sample IBANs, BIC and bank
+code of one bank), `iban_format` and `calculate_iban`.
+
+```bash
+claude mcp add --transport http ibangen https://ibangen.com/api/mcp
+```
+
+## Install the local server
 
 ```bash
 pip install ibangen-mcp
